@@ -1,0 +1,382 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local abilitiesFolder = character:WaitForChild("Abilities")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local heartbeatConnection
+local sliderValue = 20
+
+local BASE_THRESHOLD = 0.15
+local VELOCITY_SCALING_FACTOR_FAST = 0.050
+local VELOCITY_SCALING_FACTOR_SLOW = 0.1
+
+local parryButtonPress = replicatedStorage.Remotes.ParryButtonPress
+
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    abilitiesFolder = character:WaitForChild("Abilities")
+end
+
+localPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+local TruValue = Instance.new("StringValue")
+
+if game.Workspace:FindFirstChild("AbilityThingyk1212") then
+    game.Workspace:FindFirstChild("AbilityThingyk1212"):Remove()
+    task.wait(0.1)
+end
+
+TruValue.Parent = game:GetService("Workspace")
+TruValue.Name = "AbilityThingyk1212"
+TruValue.Value = "Dash" -- Change to Use other ability
+
+local Window = Rayfield:CreateWindow({
+    Name = "Blade Baller",
+    LoadingTitle = "BladeBlade",
+    LoadingSubtitle = "by Autumn",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "BladeBallerlol",
+        FileName = "Configuration"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "false",
+        RememberJoins = true
+    },
+    KeySystem = false,
+    KeySettings = {
+        Title = "nil",
+        Subtitle = "Key System",
+        Note = "nil",
+        FileName = "nil",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = "none"
+    }
+})
+
+local AutoParry = Window:CreateTab("Auto Parry", 13014537525)
+local Main = Window:CreateTab("Main", 13014546637)
+local AutoOpen = Window:CreateTab("Auto Open", 13014546637)
+
+local function startAutoParry()
+    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local ballsFolder = game.Workspace:WaitForChild("Balls")
+    local abilityButtonPress = replicatedStorage.Remotes.AbilityButtonPress
+    local focusedBall = nil -- Initialize focusedBall
+
+    print("Auto Parry script started.")
+
+    local function onCharacterAdded(newCharacter)
+        character = newCharacter
+    end
+    localPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+    if character then
+        print("Character found.")
+    else
+        print("Character not found.")
+        return
+    end
+
+    local function chooseNewFocusedBall()
+        local balls = ballsFolder:GetChildren()
+        for _, ball in ipairs(balls) do
+            if ball:GetAttribute("realBall") ~= nil and ball:GetAttribute("realBall") == true then
+                focusedBall = ball
+                print(focusedBall.Name)
+                break
+            elseif ball:GetAttribute("target") ~= nil then
+                focusedBall = ball
+                print(focusedBall.Name)
+                break
+            end
+        end
+
+        if focusedBall == nil then
+            print("Debug: Could not find a ball that's the realBall or has a target.")
+        end
+        return focusedBall
+    end
+
+    chooseNewFocusedBall()
+
+    local function getDynamicThreshold(ballVelocityMagnitude)
+        if highPing then
+            if ballVelocityMagnitude > 200 then
+                return math.max(0.60, BASE_THRESHOLD - ((ballVelocityMagnitude - 200) * 0.0018))
+            elseif ballVelocityMagnitude > 190 then
+                return math.max(0.55, BASE_THRESHOLD - ((ballVelocityMagnitude - 190) * 0.0016))
+            elseif ballVelocityMagnitude > 175 then
+                return math.max(0.50, BASE_THRESHOLD - ((ballVelocityMagnitude - 175) * 0.0014))
+            elseif ballVelocityMagnitude > 150 then
+                return math.max(0.45, BASE_THRESHOLD - ((ballVelocityMagnitude - 150) * 0.0012))
+            elseif ballVelocityMagnitude > 130 then
+                return math.max(0.40, BASE_THRESHOLD - ((ballVelocityMagnitude - 130) * 0.001))
+            else
+                return math.max(0.30, BASE_THRESHOLD - ((ballVelocityMagnitude - 100) * 0.0008))
+            end
+        else
+            if ballVelocityMagnitude > 200 then
+                return math.max(0.60, BASE_THRESHOLD - ((ballVelocityMagnitude - 200) * 0.002))
+            elseif ballVelocityMagnitude > 190 then
+                return math.max(0.55, BASE_THRESHOLD - ((ballVelocityMagnitude - 190) * 0.0018))
+            elseif ballVelocityMagnitude > 175 then
+                return math.max(0.50, BASE_THRESHOLD - ((ballVelocityMagnitude - 175) * 0.0016))
+            elseif ballVelocityMagnitude > 150 then
+                return math.max(0.45, BASE_THRESHOLD - ((ballVelocityMagnitude - 150) * 0.0014))
+            elseif ballVelocityMagnitude > 130 then
+                return math.max(0.40, BASE_THRESHOLD - ((ballVelocityMagnitude - 130) * 0.0012))
+            elseif ballVelocityMagnitude > 100 then
+                return math.max(0.30, BASE_THRESHOLD - ((ballVelocityMagnitude - 100) * 0.001))
+            elseif ballVelocityMagnitude > 60 then
+                return math.max(0.20, BASE_THRESHOLD - (ballVelocityMagnitude * VELOCITY_SCALING_FACTOR_FAST))
+            else
+                return math.min(0.01, BASE_THRESHOLD + (ballVelocityMagnitude * VELOCITY_SCALING_FACTOR_SLOW))
+            end
+        end
+    end
+
+    local function timeUntilImpact(ballVelocity, distanceToPlayer, playerVelocity)
+        local directionToPlayer = (character.HumanoidRootPart.Position - focusedBall.Position).Unit
+        local velocityTowardsPlayer = ballVelocity:Dot(directionToPlayer) - playerVelocity:Dot(directionToPlayer)
+
+        if velocityTowardsPlayer <= 0 then
+            return math.huge
+        end
+
+        return (distanceToPlayer - sliderValue) / velocityTowardsPlayer
+    end
+
+    local function isWalkSpeedZero()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            return humanoid.WalkSpeed == 0
+        end
+        return false
+    end
+
+    local function checkBallDistance()
+        if not character or not character:FindFirstChild("Highlight") then return end
+
+        local charPos = character.PrimaryPart.Position
+        local charVel = character.PrimaryPart.Velocity
+
+        if focusedBall and not focusedBall.Parent then
+            print("Focused ball lost parent. Choosing a new focused ball.")
+            chooseNewFocusedBall()
+        end
+        if not focusedBall then
+            print("No focused ball.")
+            chooseNewFocusedBall()
+        end
+
+        local ball = focusedBall
+        local distanceToPlayer = (ball.Position - charPos).Magnitude
+        local ballVelocityTowardsPlayer = ball.Velocity:Dot((charPos - ball.Position).Unit)
+
+        if distanceToPlayer < 10 then
+            parryButtonPress:Fire()
+        end
+
+        local isCheckingRage = false
+
+        if timeUntilImpact(ball.Velocity, distanceToPlayer, charVel) < getDynamicThreshold(ballVelocityTowardsPlayer) then
+            if highPing then
+                if not isCheckingRage then
+                    isCheckingRage = true
+                    abilityButtonPress:Fire()
+                    if not isWalkSpeedZero() then
+                        parryButtonPress:Fire()
+                    end
+                    isCheckingRage = false
+                end
+            else
+                parryButtonPress:Fire()
+            end
+        end
+    end
+
+    heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        checkBallDistance()
+    end)
+end
+
+local function stopAutoParry()
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+end
+
+local Descrip = AutoParry:CreateButton({
+    Name = "AutoParry(credits)",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Credits",
+            Content = "Auto Parry By Autumn",
+            Duration = 60,
+            Image = nil,
+            Actions = { -- Notification Buttons
+                Ignore = {
+                    Name = "YAY!",
+                    Callback = function()
+                        print("The user tapped Okay!")
+                    end
+                },
+            },
+        })
+    end
+})
+
+local AutoParrySection = AutoParry:CreateSection("Auto Parry")
+
+local AutoParryToggle -- Define the toggle variable
+
+AutoParryToggle = AutoParry:CreateToggle({
+    Name = "Auto Parry",
+    CurrentValue = false,
+    Flag = "AutoParryFlag",
+    Callback = function(Value)
+        if Value then
+            startAutoParry(false) -- false means standard ping
+        else
+            stopAutoParry()
+        end
+    end,
+})
+
+-- High Ping Auto Parry Toggle
+local HighPingAutoParryToggle -- Define the high ping toggle variable
+
+HighPingAutoParryToggle = AutoParry:CreateToggle({
+    Name = "High Ping Auto Parry",
+    CurrentValue = false,
+    Flag = "HighPingAutoParryFlag",
+    Callback = function(Value)
+        if Value then
+            startAutoParry(true) -- true means high ping
+        else
+            stopAutoParry()
+        end
+    end,
+})
+
+local ToggleValue = false  -- Variable to store the toggle state
+
+-- Toggle for Auto Open Sword Box
+local ToggleSwordBox = AutoOpen:CreateToggle({
+    Name = "Auto Open Sword Box",
+    CurrentValue = false,
+    Flag = "AutoOpenSwordBox", -- Unique flag identifier for configuration saving
+    Callback = function(Value)
+        ToggleValue = Value  -- Update the toggle state variable
+
+        -- Start or stop the loop based on the toggle state
+        if ToggleValue then
+            while ToggleValue do
+                game:GetService("ReplicatedStorage").Remotes.Store.RequestOpenSwordBox:InvokeServer()
+                wait(0.3) -- Adjust the delay between invocations (in seconds)
+            end
+        end
+    end,
+})
+
+local ToggleExplosivesBox = AutoOpen:CreateToggle({
+    Name = "Auto Open Explosives Box",
+    CurrentValue = false,
+    Flag = "AutoOpenExplosivesBox", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        ToggleValue = Value
+
+        if ToggleValue then
+            while ToggleValue do
+                game:GetService("ReplicatedStorage").Remotes.Store.RequestOpenExplosivesBox:InvokeServer()
+                wait(0.3) -- Adjust the delay between invocations (in seconds)
+            end
+        end
+    end,
+})
+
+local Clashing = AutoParry:CreateSection("Clashing")
+local SpamParry = AutoParry:CreateKeybind({
+   Name = "SpamParry (Hold)",
+   CurrentKeybind = "C",
+   HoldToInteract = true,
+   Flag = "ToggleParrySpam", 
+   Callback = function(Keybind)
+            local function click(a)
+    game:GetService("VirtualInputManager"):SendMouseButtonEvent(a.AbsolutePosition.X+a.AbsoluteSize.X/2,a.AbsolutePosition.Y+50,0,true,a,1)
+    game:GetService("VirtualInputManager"):SendMouseButtonEvent(a.AbsolutePosition.X+a.AbsoluteSize.X/2,a.AbsolutePosition.Y+50,0,false,a,1)
+end
+
+click(game:GetService("Players").LocalPlayer.PlayerGui.Hotbar.Block.Pressable1)
+   end,
+})
+
+local Button = Main:CreateButton({
+   Name = "Infinite Jump Toggle",
+   Callback = function()
+       --Toggles the infinite jump between on or off on every script run
+_G.infinjump = not _G.infinjump
+
+if _G.infinJumpStarted == nil then
+	--Ensures this only runs once to save resources
+	_G.infinJumpStarted = true
+	
+	--Notifies readiness
+	game.StarterGui:SetCore("SendNotification", {Title="Youtube Hub"; Text="Infinite Jump Activated!"; Duration=5;})
+
+	--The actual infinite jump
+	local plr = game:GetService('Players').LocalPlayer
+	local m = plr:GetMouse()
+	m.KeyDown:connect(function(k)
+		if _G.infinjump then
+			if k:byte() == 32 then
+			humanoid = game:GetService'Players'.LocalPlayer.Character:FindFirstChildOfClass('Humanoid')
+			humanoid:ChangeState('Jumping')
+			wait()
+			humanoid:ChangeState('Seated')
+			end
+		end
+	end)
+end
+   end,
+})
+
+local Slider = Main:CreateSlider({
+   Name = "WalkSpeed Slider",
+   Range = {1, 350},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "sliderws", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (Value)
+   end,
+})
+
+local Slider = Main:CreateSlider({
+   Name = "JumpPower Slider",
+   Range = {1, 350},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "sliderjp", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = (Value)
+   end,
+})
+
+
+local Input = Main:CreateInput({
+   Name = "Walkspeed",
+   PlaceholderText = "1-500",
+   RemoveTextAfterFocusLost = true,
+   Callback = function(Text)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (Text)
+   end,
+})
