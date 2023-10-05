@@ -31,8 +31,6 @@ local FullChargePrediction = .8
 local TapHeavyNotChargedPrediction = .1
 local HighPingCheck = .15
 
-getgenv().SecureMode = true
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
