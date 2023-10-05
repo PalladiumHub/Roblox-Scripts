@@ -1033,21 +1033,6 @@ local Input = SluggerzTab:CreateInput({
     end,
 })
 
-local Dropdown = SluggerzTab:CreateDropdown({
-    Name = "Mid-Charge Action",
-    Options = MidChargeActionTable,
-    CurrentOption = MidChargeAction,
-    Size = 0.25,
-    Callback = function(Option)
-        -- The function that takes place when the selected option is changed
-        -- The variable (Option) is a string for the current selected option
-        MidChargeAction = Option
-        writefile("MidChargeAction", MidChargeAction)
-    end,
-})
-
-
-
 local Toggle = SluggerzTab:CreateToggle({
     Name = "Enable Slugger M2 Predictions",
     CurrentValue = ReturnBoolFromText(SluggerM2Enabled) == "1", -- Convert to boolean
