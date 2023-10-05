@@ -1035,14 +1035,17 @@ local Input = SluggerzTab:CreateInput({
 
 local Dropdown = SluggerzTab:CreateDropdown({
     Name = "Mid-Charge Action",
-    Options = "Block","Manual",
-    CurrentOption = "Block",
+    Options = {"Block","Manual"},
+    CurrentOption = {"Block"},
     Size = 0.25,
-    Callback = function(Chosen)
-        MidChargeAction = Chosen
+    Callback = function(Option)
+        -- The function that takes place when the selected option is changed
+        -- The variable (Option) is a string for the current selected option
+        MidChargeAction = Option
         writefile("MidChargeAction", MidChargeAction)
-    end
+    end,
 })
+
 
 
 local Toggle = SluggerzTab:CreateToggle({
