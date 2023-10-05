@@ -963,7 +963,7 @@ local AutoDodgeSection = AutoDodgeTab:CreateSection("Stuffz")
 local SluggerzTab = Window:CreateTab("Sluggerz", 4483362458) -- Title, Image
 local SluggerzSection = SluggerzTab:CreateSection("Sluggerz")
 
-local KeyBindsTab = Window:CreateTab("KeyBindz", 4483362458) -- Title, Image
+local KeyBindsTab = Window:CreateTab("KeyBindz & Stuffz", 4483362458) -- Title, Image
 local KeyBindsSection = KeyBindsTab:CreateSection("Key Set-ups")
 
 local Toggle = AutoDodgeTab:CreateToggle({
@@ -1077,6 +1077,20 @@ local Keybind = KeyBindsTab:CreateKeybind({
             EnabledAutoDodge = "1"
             writefile("EnabledAutoDodge", EnabledAutoDodge)
         end
+    end,
+})
+
+local Slider = KeyBindsTab:CreateSlider({
+    Name = "Time Cycle",
+    Range = {1, 10},
+    Increment = 1,
+    Suffix = "Bananas",
+    CurrentValue = 10,
+    Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        -- The function that takes place when the slider changes
+        -- The variable (Value) is a number which correlates to the value the slider is currently at
+        game.Lighting.ClockTime = Value
     end,
 })
 
