@@ -1035,7 +1035,7 @@ local Input = SluggerzTab:CreateInput({
 
 local Dropdown = SluggerzTab:CreateDropdown({
     Name = "Mid-Charge Action",
-    Options = MidChargeActionTable,
+    Options = {"Block","Manual"},
     CurrentOption = MidChargeAction,
     Size = 0.25,
     Callback = function(Chosen)
