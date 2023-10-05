@@ -1075,9 +1075,39 @@ local Keybind = KeyBindsTab:CreateKeybind({
         if EnabledAutoDodge == "1" then
             EnabledAutoDodge = "2"
             writefile("EnabledAutoDodge", EnabledAutoDodge)
+	    Rayfield:Notify({
+    		Title = "",
+    		Content = "Auto Dodge: " .. tostring(ReturnBoolFromText(EnabledAutoDodge)),
+    		Duration = 1.2,
+    		Image = 4483362458,
+    		Actions = { -- Notification Buttons
+        		Ignore = {
+            		Name = "ye",
+            		Callback = function()
+                		print("The user tapped Okay!")
+            		end
+        },
+    },
+})
+
         elseif EnabledAutoDodge == "2" then
             EnabledAutoDodge = "1"
             writefile("EnabledAutoDodge", EnabledAutoDodge)
+	    Rayfield:Notify({
+    		Title = "Notification Title",
+    		Content = "Auto Dodge: " .. tostring(ReturnBoolFromText(EnabledAutoDodge)),
+    		Duration = 6.5,
+    		Image = 4483362458,
+    		Actions = { -- Notification Buttons
+        		Ignore = {
+            		Name = "Okay!",
+            		Callback = function()
+                		print("The user tapped Okay!")
+            		end
+        },
+    },
+})
+
         end
     end,
 })
